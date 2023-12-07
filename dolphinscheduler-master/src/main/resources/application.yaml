@@ -120,9 +120,9 @@ master:
   task-commit-interval: 1s
   state-wheel-interval: 5s
   # master max cpuload avg percentage, only higher than the system cpu load average, master server can schedule. default value 1: will use 100% cpu
-  max-cpu-load-avg: 1
+  max-cpu-load-avg: 100
   # master reserved memory, only lower than system available memory, master server can schedule. default value 0.3, only the available memory is higher than 30%, master server can schedule.
-  reserved-memory: 0.3
+  reserved-memory: 0.01
   # failover interval, the unit is minute
   failover-interval: 10m
   # kill yarn / k8s application when failover taskInstance, default true

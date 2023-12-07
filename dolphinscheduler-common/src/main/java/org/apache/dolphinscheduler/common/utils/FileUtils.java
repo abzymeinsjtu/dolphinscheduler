@@ -347,7 +347,7 @@ public class FileUtils {
     public static void setDirectoryOwner(Path filePath, String fileOwner) throws FileOperateException {
         try {
             // We use linux command to set the file owner, since jdk api will not use sudo.
-            String command = String.format("sudo chown -R %s %s", fileOwner, filePath.toString());
+            String command = String.format("chown -R %s %s", fileOwner, filePath.toString());
             Runtime.getRuntime().exec(command);
             Process process = Runtime.getRuntime().exec(command);
             int exitCode = process.waitFor();
