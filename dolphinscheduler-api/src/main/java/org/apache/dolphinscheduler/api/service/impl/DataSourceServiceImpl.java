@@ -28,14 +28,20 @@ import org.apache.dolphinscheduler.api.utils.PageInfo;
 import org.apache.dolphinscheduler.common.constants.Constants;
 import org.apache.dolphinscheduler.common.enums.AuthorizationType;
 import org.apache.dolphinscheduler.common.enums.UserType;
+import org.apache.dolphinscheduler.common.model.Server;
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
 import org.apache.dolphinscheduler.dao.entity.DataSource;
 import org.apache.dolphinscheduler.dao.entity.User;
 import org.apache.dolphinscheduler.dao.mapper.DataSourceMapper;
 import org.apache.dolphinscheduler.dao.mapper.DataSourceUserMapper;
+import org.apache.dolphinscheduler.extract.base.client.SingletonJdkDynamicRpcClientProxyFactory;
+import org.apache.dolphinscheduler.extract.worker.IWorkerDatasourceService;
+import org.apache.dolphinscheduler.extract.worker.transportor.TestConnectionRequest;
+import org.apache.dolphinscheduler.extract.worker.transportor.TestConnectionResponse;
 import org.apache.dolphinscheduler.plugin.datasource.api.datasource.BaseDataSourceParamDTO;
-import org.apache.dolphinscheduler.plugin.datasource.api.datasource.DataSourceProcessor;
 import org.apache.dolphinscheduler.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.dolphinscheduler.registry.api.RegistryClient;
+import org.apache.dolphinscheduler.registry.api.enums.RegistryNodeType;
 import org.apache.dolphinscheduler.spi.datasource.BaseConnectionParam;
 import org.apache.dolphinscheduler.spi.datasource.ConnectionParam;
 import org.apache.dolphinscheduler.spi.enums.DbType;
@@ -79,6 +85,9 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
 
     @Autowired
     private DataSourceUserMapper datasourceUserMapper;
+
+    @Autowired
+    private RegistryClient registryClient;
 
     private static final String TABLE = "TABLE";
     private static final String VIEW = "VIEW";
@@ -222,8 +231,8 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
      *
      * @param loginUser login user
      * @param searchVal search value
-     * @param pageNo page number
-     * @param pageSize page size
+     * @param pageNo    page number
+     * @param pageSize  page size
      * @return data source list page
      */
     @Override
@@ -275,7 +284,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
      * query data resource list
      *
      * @param loginUser login user
-     * @param type data source type
+     * @param type      data source type
      * @return data source list page
      */
     @Override
@@ -321,12 +330,20 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
      */
     @Override
     public void checkConnection(DbType type, ConnectionParam connectionParam) {
-        DataSourceProcessor sshDataSourceProcessor = DataSourceUtils.getDatasourceProcessor(type);
-        boolean connectivity = sshDataSourceProcessor.checkDataSourceConnectivity(connectionParam);
-        if (connectivity) {
-            return;
+        List<Server> workerServers = registryClient.getServerList(RegistryNodeType.WORKER);
+        String host = workerServers.get(0).getHost() + ":" + workerServers.get(0).getPort();
+
+        IWorkerDatasourceService iWorkerDatasourceService =
+                SingletonJdkDynamicRpcClientProxyFactory.getProxyClient(host, IWorkerDatasourceService.class);
+
+        TestConnectionResponse testConnectionResponse = iWorkerDatasourceService.testConnection(
+                new TestConnectionRequest(JSONUtils.toJsonString(connectionParam), type)
+        );
+
+        if (!testConnectionResponse.isSuccess()) {
+            log.error(testConnectionResponse.getErrorMessage());
+            throw new ServiceException(Status.CONNECTION_TEST_FAILURE, testConnectionResponse.getErrorMessage());
         }
-        throw new ServiceException(Status.CONNECTION_TEST_FAILURE);
     }
 
     /**
@@ -341,8 +358,14 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
         if (dataSource == null) {
             throw new ServiceException(Status.RESOURCE_NOT_EXIST);
         }
-        checkConnection(dataSource.getType(),
-                DataSourceUtils.buildConnectionParams(dataSource.getType(), dataSource.getConnectionParams()));
+
+        checkConnection(
+                dataSource.getType(),
+                DataSourceUtils.buildConnectionParams(
+                        dataSource.getType(),
+                        dataSource.getConnectionParams()
+                )
+        );
     }
 
     /**
@@ -372,7 +395,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
      * unauthorized datasource
      *
      * @param loginUser login user
-     * @param userId user id
+     * @param userId    user id
      * @return unauthed data source result code
      */
     @Override
@@ -406,7 +429,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
      * authorized datasource
      *
      * @param loginUser login user
-     * @param userId user id
+     * @param userId    user id
      * @return authorized result code
      */
     @Override
