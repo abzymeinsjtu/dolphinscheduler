@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.apache.dolphinscheduler.dao.mapper.v3.ProcessInstanceV3Mapper">
+    <sql id="baseSql">
+        id
+        , name, process_definition_version, process_definition_code, project_code, state, recovery, start_time, end_time, run_times,host,
+        command_type, command_param, task_depend_type, max_try_times, failure_strategy, warning_type,
+        warning_group_id, schedule_time, command_start_time, global_params, flag,
+        update_time, is_sub_process, executor_id, history_cmd,
+        process_instance_priority, worker_group,environment_code, timeout, tenant_code, var_pool,
+        dry_run, test_flag, next_process_instance_id, restart_time, state_history
+    </sql>
+
+    <select id="queryProcessInstanceById" resultType="org.apache.dolphinscheduler.dao.entity.ProcessInstance">
+        select
+        <include refid="baseSql"/>
+        from t_ds_process_instance
+        where id = #{processId}
+    </select>
+    <select id="listProcessInstances" resultType="org.apache.dolphinscheduler.dao.entity.ProcessInstance">
+        select
+        <include refid="baseSql"/>
+        from t_ds_process_instance
+        where is_sub_process=0
+        and project_code = #{projectCode}
+        <if test="processDefinitionCode != null">
+            and process_definition_code = #{processDefinitionCode}
+        </if>
+        <if test="searchVal != null and searchVal != ''">
+            and name like concat('%', #{searchVal}, '%')
+        </if>
+        <if test="startTime != null">
+            and start_time <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            and start_time <![CDATA[ <= ]]> #{endTime}
+        </if>
+        <if test="states != null and states.length > 0">
+            and state in
+            <foreach collection="states" index="index" item="i" open="(" separator="," close=")">
+                #{i}
+            </foreach>
+        </if>
+        <if test="offset != null ">
+            and id > #{offset}
+        </if>
+        order by id
+        limit #{maxResults}
+    </select>
+    <select id="countProcessInstances" resultType="java.lang.Integer">
+        select count(*)
+        from t_ds_process_instance
+        where is_sub_process=0
+        <if test="processDefinitionCode != null">
+            and process_definition_code = #{processDefinitionCode}
+        </if>
+        <if test="searchVal != null and searchVal != ''">
+            and name like concat('%', #{searchVal}, '%')
+        </if>
+        <if test="startTime != null">
+            and start_time <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            and start_time <![CDATA[ <= ]]> #{endTime}
+        </if>
+        <if test="states != null and states.length > 0">
+            and state in
+            <foreach collection="states" index="index" item="i" open="(" separator="," close=")">
+                #{i}
+            </foreach>
+        </if>
+    </select>
+</mapper>
