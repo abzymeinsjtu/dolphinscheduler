@@ -2,15 +2,16 @@ package org.apache.dolphinscheduler.api.utils;
 
 import org.apache.dolphinscheduler.api.exceptions.ServiceException;
 
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 public class PaginationUtils {
+
     private static final String algorithm = "AES/CBC/PKCS5Padding";
 
     private static final IvParameterSpec ivParameterSpec = new IvParameterSpec(new byte[16]);
@@ -31,8 +32,7 @@ public class PaginationUtils {
                 encodedKeyNew,
                 0,
                 encodedKeyNew.length,
-                "AES"
-        );
+                "AES");
 
         try {
             return decrypt(algorithm, nextToken.substring(22), decryptKey, ivParameterSpec);
@@ -49,9 +49,7 @@ public class PaginationUtils {
     }
 
     public static String encrypt(String algorithm, String input, SecretKey key,
-                                 IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException, InvalidKeyException,
-            BadPaddingException, IllegalBlockSizeException {
+                                 IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 
         Cipher cipher = Cipher.getInstance(algorithm);
         cipher.init(Cipher.ENCRYPT_MODE, key, iv);
@@ -62,9 +60,7 @@ public class PaginationUtils {
     }
 
     public static String decrypt(String algorithm, String cipherText, SecretKey key,
-                                 IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException, InvalidKeyException,
-            BadPaddingException, IllegalBlockSizeException {
+                                 IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Cipher cipher = Cipher.getInstance(algorithm);
         cipher.init(Cipher.DECRYPT_MODE, key, iv);
         byte[] plainText = cipher.doFinal(Base64.getDecoder()

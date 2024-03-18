@@ -337,8 +337,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
                 SingletonJdkDynamicRpcClientProxyFactory.getProxyClient(host, IWorkerDatasourceService.class);
 
         TestConnectionResponse testConnectionResponse = iWorkerDatasourceService.testConnection(
-                new TestConnectionRequest(JSONUtils.toJsonString(connectionParam), type)
-        );
+                new TestConnectionRequest(JSONUtils.toJsonString(connectionParam), type));
 
         if (!testConnectionResponse.isSuccess()) {
             log.error(testConnectionResponse.getErrorMessage());
@@ -363,9 +362,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
                 dataSource.getType(),
                 DataSourceUtils.buildConnectionParams(
                         dataSource.getType(),
-                        dataSource.getConnectionParams()
-                )
-        );
+                        dataSource.getConnectionParams()));
     }
 
     /**

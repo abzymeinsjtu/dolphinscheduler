@@ -17,27 +17,26 @@
 
 package org.apache.dolphinscheduler.dao.mapper.v3;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.dolphinscheduler.dao.entity.Project;
+
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * project mapper interface
  */
 public interface ProjectV3Mapper extends BaseMapper<Project> {
-    Project queryProjectByCode(@Param("projectCode") long projectCode);
+
+    Project queryProjectByCodeForUpdate(@Param("userId") int userId, @Param("projectCode") long projectCode);
+
+    Project queryProjectByName(@Param("projectName") String projectName);
 
     List<Project> listProjects(
-            @Param("userId") int userId,
-            @Param("offset") int offset,
-            @Param("maxResults") int maxResults,
-            @Param("searchVal") String searchVal
-    );
-
-    int countProjects(
-            @Param("userId") int userId,
-            @Param("searchVal") String searchVal
-    );
+                               @Param("userId") int userId,
+                               @Param("offset") int offset,
+                               @Param("maxResults") int maxResults,
+                               @Param("searchVal") String searchVal);
 }

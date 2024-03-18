@@ -1,11 +1,12 @@
 package org.apache.dolphinscheduler.api.utils;
 
-import lombok.Data;
-
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class QueryResult<T> {
+
     List<T> data;
 
     String nextToken;

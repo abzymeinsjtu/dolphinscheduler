@@ -17,28 +17,43 @@
 
 package org.apache.dolphinscheduler.api.v3.service;
 
-import org.apache.dolphinscheduler.api.utils.QueryResult;
 import org.apache.dolphinscheduler.dao.entity.Project;
+import org.apache.dolphinscheduler.dao.entity.User;
+
+import java.util.List;
 
 /**
  * project service
  **/
 public interface ProjectV3Service {
+
     /**
      * query project details by code
      *
      * @param projectCode project code
      * @return project detail information
      */
-    Project queryProject(long projectCode);
+    Project queryProjectForUpdate(User user, long projectCode);
 
     /**
      * admin can view all projects
      *
-     * @param userId user id
-     * @param offset offset
+     * @param user       User
+     * @param offset     offset
      * @param maxResults max result
      * @return project list which the login user have permission to see
      */
-    QueryResult<Project> listProjects(int userId, int offset, int maxResults, String searchVal);
+    List<Project> listAuthorizedProject(User user, int offset, int maxResults, String searchVal);
+
+    Project createProject(User user, String name, String description);
+
+    /**
+     * delete project by code
+     *
+     * @param project Project
+     * @return delete result code
+     */
+    void deleteProject(Project project);
+
+    Project updateProject(Project project, String name, String description);
 }

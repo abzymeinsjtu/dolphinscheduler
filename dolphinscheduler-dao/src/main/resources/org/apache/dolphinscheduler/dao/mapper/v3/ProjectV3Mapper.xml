@@ -24,36 +24,41 @@
     <sql id="baseSqlV2">
         ${alias}.id, ${alias}.name, ${alias}.code, ${alias}.description, ${alias}.user_id, ${alias}.flag, ${alias}.create_time, ${alias}.update_time
     </sql>
-    <select id="queryProjectByCode" resultType="org.apache.dolphinscheduler.dao.entity.Project">
+    <select id="queryProjectByCodeForUpdate" resultType="org.apache.dolphinscheduler.dao.entity.Project">
         select
-        <include refid="baseSql"/>
+        <include refid="baseSqlV2">
+            <property name="alias" value="p"/>
+        </include>, rel.perm
+        from t_ds_project p left join t_ds_relation_project_user rel
+        on p.id = rel.project_id and #{userId} = rel.user_id
+        where p.code = #{projectCode}
+    </select>
+    <select id="queryProjectByName" resultType="org.apache.dolphinscheduler.dao.entity.Project">
+        select
+        <include refid="baseSql" />
         from t_ds_project
-        where code = #{projectCode}
+        where name = #{projectName}
     </select>
     <select id="listProjects" resultType="org.apache.dolphinscheduler.dao.entity.Project">
         select
         <include refid="baseSqlV2">
             <property name="alias" value="p"/>
-        </include>
+        </include>,
+            rel.perm as perm,
+            u.user_name as user_name
         from t_ds_project p
-        where p.user_id= #{userId}
+        left join t_ds_user u on u.id=p.user_id
+        left join t_ds_relation_project_user rel on p.id = rel.project_id
+            and #{userId} = rel.user_id
+        where 1 = 1
         <if test="offset != null ">
             and p.id > #{offset}
         </if>
         <if test="searchVal != null and searchVal != ''">
             <bind name="searchValPat" value="'%' + searchVal + '%'" />
-            AND p.name like #{searchValPat}
+            and p.name like #{searchValPat}
         </if>
-        order by id
+        order by p.id
         limit #{maxResults}
-    </select>
-    <select id="countProjects" resultType="java.lang.Integer">
-        select count(*)
-        from t_ds_project
-        where user_id= #{userId}
-        <if test="searchVal != null and searchVal != ''">
-            <bind name="searchValPat" value="'%' + searchVal + '%'" />
-            AND name like #{searchValPat}
-        </if>
     </select>
 </mapper>

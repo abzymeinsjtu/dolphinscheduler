@@ -19,7 +19,6 @@ package org.apache.dolphinscheduler.extract.worker;
 
 import org.apache.dolphinscheduler.extract.base.RpcMethod;
 import org.apache.dolphinscheduler.extract.base.RpcService;
-import org.apache.dolphinscheduler.extract.worker.transportor.*;
 
 @RpcService
 public interface IWorkerDatasourceService {

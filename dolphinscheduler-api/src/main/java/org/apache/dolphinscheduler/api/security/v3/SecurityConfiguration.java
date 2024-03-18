@@ -1,6 +1,7 @@
-package org.apache.dolphinscheduler.api.security;
+package org.apache.dolphinscheduler.api.security.v3;
 
-import org.apache.dolphinscheduler.api.security.filter.AuthenticationFilter;
+import org.apache.dolphinscheduler.api.security.v3.filter.AuthenticationFilter;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -14,22 +15,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(
-        prePostEnabled = true
-)
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-                        authorizationManagerRequestMatcherRegistry ->
-                                authorizationManagerRequestMatcherRegistry
-                                        .regexMatchers("/v3/(.*)",  "/dolphinscheduler/v3/(.*)")
-                                        .authenticated()
-                )
+                        authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry
+                                .regexMatchers("/v3/(.*)")
+                                .authenticated())
                 .httpBasic(Customizer.withDefaults())
-                .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(new AuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

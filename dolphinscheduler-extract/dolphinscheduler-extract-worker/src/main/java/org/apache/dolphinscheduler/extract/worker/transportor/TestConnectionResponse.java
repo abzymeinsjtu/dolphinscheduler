@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestConnectionResponse {
+
     private boolean success;
 
     private String errorMessage;

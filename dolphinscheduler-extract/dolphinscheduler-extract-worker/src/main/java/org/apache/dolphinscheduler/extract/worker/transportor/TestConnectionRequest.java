@@ -17,15 +17,17 @@
 
 package org.apache.dolphinscheduler.extract.worker.transportor;
 
+import org.apache.dolphinscheduler.spi.enums.DbType;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.dolphinscheduler.spi.enums.DbType;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestConnectionRequest {
+
     private String connectionParam;
 
     private DbType dbType;

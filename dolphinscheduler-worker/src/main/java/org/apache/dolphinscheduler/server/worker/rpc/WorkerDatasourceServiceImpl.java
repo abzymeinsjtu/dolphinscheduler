@@ -17,31 +17,33 @@
 
 package org.apache.dolphinscheduler.server.worker.rpc;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.dolphinscheduler.extract.worker.IWorkerDatasourceService;
-import org.apache.dolphinscheduler.extract.worker.transportor.*;
 import org.apache.dolphinscheduler.plugin.datasource.api.datasource.DataSourceProcessor;
 import org.apache.dolphinscheduler.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.dolphinscheduler.spi.datasource.ConnectionParam;
-import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 public class WorkerDatasourceServiceImpl implements IWorkerDatasourceService {
+
     @Override
     public TestConnectionResponse testConnection(TestConnectionRequest testConnectionRequest) {
         String errorMessage;
         boolean success;
 
         DataSourceProcessor dataSourceProcessor = DataSourceUtils.getDatasourceProcessor(
-                testConnectionRequest.getDbType()
-        );
+                testConnectionRequest.getDbType());
 
-        ConnectionParam connectionParam = dataSourceProcessor.createConnectionParams(testConnectionRequest.getConnectionParam());
+        ConnectionParam connectionParam =
+                dataSourceProcessor.createConnectionParams(testConnectionRequest.getConnectionParam());
 
-        try (Connection ignored = dataSourceProcessor.getConnection(connectionParam)){
+        try (Connection ignored = dataSourceProcessor.getConnection(connectionParam)) {
             errorMessage = "ok";
             success = true;
         } catch (Exception e) {

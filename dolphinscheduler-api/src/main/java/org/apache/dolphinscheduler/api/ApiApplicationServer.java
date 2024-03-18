@@ -41,9 +41,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.EventListener;
 
 @ServletComponentScan
-@SpringBootApplication(
-        exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class}
-)
+@SpringBootApplication(exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 @ComponentScan("org.apache.dolphinscheduler")
 @Slf4j
 public class ApiApplicationServer {

@@ -18,17 +18,20 @@
 package org.apache.dolphinscheduler.api.v3.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dolphinscheduler.api.enums.Status;
+import org.apache.dolphinscheduler.api.exceptions.ServiceException;
 import org.apache.dolphinscheduler.api.service.impl.BaseServiceImpl;
 import org.apache.dolphinscheduler.api.v3.service.ProjectV3Service;
-import org.apache.dolphinscheduler.api.utils.PaginationUtils;
-import org.apache.dolphinscheduler.api.utils.QueryResult;
+import org.apache.dolphinscheduler.common.utils.CodeGenerateUtils;
 import org.apache.dolphinscheduler.dao.entity.Project;
+import org.apache.dolphinscheduler.dao.entity.User;
 import org.apache.dolphinscheduler.dao.mapper.v3.ProjectV3Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -48,38 +51,98 @@ public class ProjectV3ServiceImpl extends BaseServiceImpl implements ProjectV3Se
      * @return project detail information
      */
     @Override
-    @PostAuthorize("returnObject.userId == authentication.getPrincipal().getId()")
-    public Project queryProject(long projectCode) {
-        return projectMapper.queryProjectByCode(projectCode);
+    @PostAuthorize("hasAuthority('ADMIN_USER') or returnObject.perm == 7 or returnObject.userId == authentication.getUserId()")
+    public Project queryProjectForUpdate(User user, long projectCode) {
+        Project project = projectMapper.queryProjectByCodeForUpdate(user.getId(), projectCode);
+
+        if (project == null) {
+            throw new ServiceException(Status.PROJECT_NOT_FOUND, projectCode);
+        }
+
+        return project;
     }
 
     /**
      * admin can view all projects
      *
-     * @param userId     user id
+     * @param user       User
      * @param searchVal  search value
      * @param maxResults max result
      * @return project list which the login user have permission to see
      */
-    @Override
-    @Transactional
-    public QueryResult<Project> listProjects(int userId, int offset, int maxResults, String searchVal) {
-        QueryResult<Project> queryResult = new QueryResult<>();
-
-        List<Project> projects = projectMapper.listProjects(
-                userId,
+    @PostFilter("hasAuthority('ADMIN_USER') or filterObject.perm > 0 or filterObject.userId == authentication.getUserId()")
+    public List<Project> listAuthorizedProject(User user, int offset, int maxResults, String searchVal) {
+        return projectMapper.listProjects(
+                user.getId(),
                 offset,
                 maxResults,
                 searchVal
         );
+    }
 
-        queryResult.setData(projects);
-        queryResult.setTotalSize(projectMapper.countProjects(userId, searchVal));
+    public Project createProject(User user, String projectName, String desc) {
+        Project existProject = projectMapper.queryProjectByName(projectName);
 
-        if (!projects.isEmpty()) {
-            queryResult.setNextToken(PaginationUtils.encodeNextToken(String.valueOf(projects.get(projects.size() - 1).getId())));
+        if (existProject != null) {
+            throw new ServiceException(Status.PROJECT_ALREADY_EXISTS, projectName);
         }
 
-        return queryResult;
+        long projectCode;
+
+        try {
+            projectCode = CodeGenerateUtils.getInstance().genCode();
+        } catch (CodeGenerateUtils.CodeGenerateException e) {
+            throw new ServiceException(Status.PROJECT_PARAMETER_CODE_EMPTY);
+        }
+
+        Date now = new Date();
+
+        Project project = Project
+                .builder()
+                .name(projectName)
+                .code(projectCode)
+                .description(desc)
+                .userId(user.getId())
+                .userName(user.getUserName())
+                .createTime(now)
+                .updateTime(now)
+                .build();
+
+        if (projectMapper.insert(project) <= 0) {
+            throw new ServiceException(Status.CREATE_PROJECT_ERROR);
+        }
+
+        return project;
+    }
+
+    public void deleteProject(Project project) {
+        if (projectMapper.deleteById(project.getId()) <= 0); {
+            throw new ServiceException(Status.DELETE_PROJECT_ERROR);
+        }
+    }
+
+
+    public Project updateProject(Project project, String name, String description) {
+        if (name != null) {
+            Project existingProject = projectMapper.queryProjectByName(name);
+
+            if (existingProject != null && !existingProject.getId().equals(project.getId())) {
+                throw new ServiceException(Status.PROJECT_ALREADY_EXISTS, name);
+            }
+
+            project.setName(name);
+        }
+
+        if (description != null) {
+            project.setDescription(description);
+        }
+
+        project.setUpdateTime(new Date());
+
+        if (projectMapper.updateById(project) <= 0) {
+            throw new ServiceException(Status.UPDATE_PROJECT_ERROR);
+        }
+
+        return project;
     }
 }

@@ -17,18 +17,22 @@
 
 package org.apache.dolphinscheduler.api.v3.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.dolphinscheduler.api.controller.BaseController;
 import org.apache.dolphinscheduler.api.utils.PaginationUtils;
 import org.apache.dolphinscheduler.api.utils.QueryResult;
 import org.apache.dolphinscheduler.api.v3.service.ProjectV3Service;
 import org.apache.dolphinscheduler.dao.entity.Project;
 import org.apache.dolphinscheduler.dao.entity.User;
+
+import java.util.List;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
 
 /**
  * project controller
@@ -42,20 +46,6 @@ public class ProjectV3Controller extends BaseController {
     private ProjectV3Service projectV3Service;
 
     /**
-     * query project details by code
-     *
-     * @param code      project code
-     * @return project detail information
-     */
-    @GetMapping(value = "/{code}")
-    @ResponseStatus(HttpStatus.OK)
-    public Project get(
-            @PathVariable("code") long code
-    ) {
-        return projectV3Service.queryProject(code);
-    }
-
-    /**
      * query project list paging
      *
      * @param searchVal  search value
@@ -65,14 +55,63 @@ public class ProjectV3Controller extends BaseController {
      */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public QueryResult<Project> list(
-            Authentication authentication,
-            @RequestParam(value = "searchVal", required = false) String searchVal,
-            @RequestParam(value = "nextToken", required = false) String nextToken,
-            @RequestParam(value = "maxResults", required = false, defaultValue = "10") Integer maxResults
-    ) {
-        int userId = ((User) authentication.getPrincipal()).getId();
+    public QueryResult<Project> listAvailableProjects(
+                                                      Authentication authentication,
+                                                      @RequestParam(value = "searchVal", required = false) String searchVal,
+                                                      @RequestParam(value = "nextToken", required = false) String nextToken,
+                                                      @RequestParam(value = "maxResults", required = false, defaultValue = "10") Integer maxResults) {
+        User loginUser = (User) authentication.getPrincipal();
         int offset = nextToken != null ? Integer.parseInt(PaginationUtils.decodeNextToken(nextToken)) : 0;
-        return projectV3Service.listProjects(userId, offset, maxResults, searchVal);
+
+        QueryResult<Project> queryResult = new QueryResult<>();
+
+        List<Project> projects = projectV3Service.listAuthorizedProject(
+                loginUser,
+                offset,
+                maxResults,
+                searchVal);
+
+        queryResult.setData(projects);
+        return queryResult;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Project createProject(
+                                 Authentication authentication,
+                                 @RequestParam("projectName") String projectName,
+                                 @RequestParam(value = "description", required = false) String description) {
+        return projectV3Service.createProject((User) authentication.getPrincipal(), projectName, description);
+    }
+
+    /**
+     * update project
+     *
+     * @param code        project code
+     * @param projectName project name
+     * @param description description
+     * @return update result code
+     */
+    @PutMapping(value = "/{code}")
+    @ResponseStatus(HttpStatus.OK)
+    @Transactional
+    public Project updateProject(
+                                 Authentication authentication,
+                                 @PathVariable("code") Long code,
+                                 @RequestParam(value = "projectName", required = false) String projectName,
+                                 @RequestParam(value = "description", required = false) String description) {
+        User loginUser = (User) authentication.getPrincipal();
+        Project project = projectV3Service.queryProjectForUpdate(loginUser, code);
+        return projectV3Service.updateProject(project, projectName, description);
+    }
+
+    @DeleteMapping(value = "/{code}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProject(
+                              Authentication authentication,
+                              @PathVariable("code") Long code) {
+        User loginUser = (User) authentication.getPrincipal();
+        Project project = projectV3Service.queryProjectForUpdate(loginUser, code);
+        projectV3Service.deleteProject(project);
     }
 }

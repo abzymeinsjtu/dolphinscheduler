@@ -1,10 +1,9 @@
-package org.apache.dolphinscheduler.api.security.filter;
+package org.apache.dolphinscheduler.api.security.v3.filter;
 
-import org.apache.dolphinscheduler.api.security.AuthenticationService;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.GenericFilterBean;
+import org.apache.dolphinscheduler.api.security.v3.AuthenticationService;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -12,16 +11,21 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
 
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.GenericFilterBean;
 
 public class AuthenticationFilter extends GenericFilterBean {
+
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain filterChain) throws IOException, ServletException {
         if (((HttpServletRequest) request).getRequestURI().contains("/v3/")) {
             try {
-                Authentication authentication = AuthenticationService.getInstance().getAuthentication((HttpServletRequest) request);
+                Authentication authentication =
+                        AuthenticationService.getInstance().getAuthentication((HttpServletRequest) request);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception exp) {
                 HttpServletResponse httpResponse = (HttpServletResponse) response;
